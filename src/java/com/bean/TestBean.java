@@ -6,13 +6,14 @@
 
 package com.bean;
 
+import javax.annotation.ManagedBean;
 import javax.ejb.Stateless;
 
 /**
  *
  * @author sertan
  */
-@Stateless
+@ManagedBean
 public class TestBean {
 
     // Add business logic below. (Right-click in editor and choose
