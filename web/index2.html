@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title id='Description'>In this sample is demonstrated how to override the built-in rendering of the Groups headers. The Grouping of Product and Ship Date columns is disabled.</title>
+        <link href="#{request.contextPath}/resources/css/jqWidgets/jqx.base.css?ver=1.0.6" type="text/css" rel="stylesheet"/>
+        <script src="#{request.contextPath}/resources/js/jquery-1.10.2.min.js" type="text/javascript"></script>
+        <script src="#{request.contextPath}/resources/js/jqueryWidget/jqx-all.js?ver=1.0.6" type="text/javascript"></script>
+        <script src="#{request.contextPath}/resources/js/jqueryWidget/globalization/globalize.js?ver=1.0.6" type="text/javascript"></script>
+    <script type="text/javascript" src="#{request.contextPath}/resources/js/generatedata.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var theme = "";
+            // prepare the data
+            var data = generatedata(200);
+            var source =
+            {
+                localdata: data,
+                datafields:
+                [
+                    { name: 'firstname', type: 'string' },
+                    { name: 'lastname', type: 'string' },
+                    { name: 'productname', type: 'string' },
+					{ name : 'viewAllowed',type : 'bool'},
+                    { name: 'date', type: 'date' },
+                    { name: 'quantity', type: 'number' },
+                    { name: 'price', type: 'number' }
+                ],
+                datatype: "array",
+                updaterow: function (rowid, rowdata) {
+                    // synchronize with the server - send update command   
+                }
+            };
+            var dataAdapter = new $.jqx.dataAdapter(source);
+            var toThemeProperty = function (className) {
+                return className + " " + className + "-" + theme;
+            }
+            var groupsrenderer = function (text, group, expanded, data) {
+                if (data.groupcolumn.datafield == 'price' || data.groupcolumn.datafield == 'quantity') {
+                    var number = dataAdapter.formatNumber(group, data.groupcolumn.cellsformat);
+                    var text = data.groupcolumn.text + ': ' + number;
+                    if (data.subItems.length > 0) {
+                        var aggregate = this.getcolumnaggregateddata(data.groupcolumn.datafield, ['sum'], true, data.subItems);
+                    }
+                    else {
+                        var rows = new Array();
+                        var getRows = function (group, rows) {
+                            if (group.subGroups.length > 0) {
+                                for (var i = 0; i < group.subGroups.length; i++) {
+                                    getRows(group.subGroups[i], rows);
+                                }
+                            }
+                            else {
+                                for (var i = 0; i < group.subItems.length; i++) {
+                                    rows.push(group.subItems[i]);
+                                }
+                            }
+                        }
+                        getRows(data, rows);
+                        var aggregate = this.getcolumnaggregateddata(data.groupcolumn.datafield, ['sum'], true, rows);
+                    }
+                    
+                    return '<div class="' + toThemeProperty('jqx-grid-groups-row') + '" style="position: absolute;"><span>' + text + ', </span>' + '<span class="' + toThemeProperty('jqx-grid-groups-row-details') + '">' + "Total" + ' (' + aggregate.sum + ')' + '</span></div>';
+                }
+                else {
+                    return '<div class="' + toThemeProperty('jqx-grid-groups-row') + '" style="position: absolute;"><span>' + text + '</span>';
+                }
+            }
+            // initialize jqxGrid
+            $("#jqxgrid").jqxGrid(
+            {
+                width: 670,
+                source: dataAdapter,
+                theme: theme,
+                groupable: true,
+                groupsrenderer: groupsrenderer,
+                selectionmode: 'singlecell',
+                groups: ['price'],
+				editable: true,
+				groupsexpandedbydefault: true,
+				editmode: 'dblclick',
+				filterable: true,
+				showfilterrow: true,
+				ready: function(){
+					$(".checkText").closest('.jqx-grid-column-header').css('overflow','visible');
+					$(".checkText").closest('.jqx-grid-column-header').parent().css('z-index','100');
+				},
+                columns: [
+                  { text: 'First Name', groupable: true, datafield: 'firstname', width: 90 },
+                  { text: 'Last Name', groupable: true, datafield: 'lastname', width: 90 },
+                  { text: 'Product', groupable: false, columntype: 'dropdownlist', datafield: 'productname', width: 180 },
+                  { text: 'Ship Date', groupable: false, datafield: 'date', width: 90, cellsalign: 'right'},
+				  { text: 'View Allowed', groupable: false, filterable: false, datafield: 'viewAllowed', width: 90, columntype: 'checkbox', cellsalign: 'right',
+				  renderer: function () {
+					return '<div class="checkText" style="text-align:center;line-height:25px"><label>View</label><br /><div id="AccountView" style="left: 50%; margin-left: -10px; top:34px; position:absolute"></div></div>';
+					},
+				  rendered: function (element) {
+					var myChkboxView = $(element).find('#AccountView');
+					$(myChkboxView).jqxCheckBox({ theme: theme, width: 16, height: 16, animationShowDelay: 0, animationHideDelay: 0 });
+					//columnCheckBoxView = $(myChkboxView);
+					$(myChkboxView).on('change', function (event) {
+						var checked = event.args.checked;
+						if (checked == null) return;
+						var rowscount = $("#jqxgrid").jqxGrid('getdatainformation').rowscount;
+						for (var i = 0; i < rowscount; i++) {
+						$("#jqxgrid").jqxGrid('setcellvalue', i, 'viewAllowed', event.args.checked);
+						}
+					});
+					return true;
+				}
+				  
+				  },
+                  { text: 'Quantity', datafield: 'quantity', width: 70, cellsalign: 'right'},
+                  { text: 'Price', datafield: 'price', cellsalign: 'right', cellsformat: 'c2'}
+                ]
+            });
+        });
+    </script>
+</head>
+<body class='default'>
+    <div id='jqxWidget'>
+        <div id="jqxgrid"></div>
+    </div>
+</body>
+</html>
