@@ -13,7 +13,7 @@ import javax.ejb.Stateless;
  *
  * @author sertan
  */
-@ManagedBean
+@ManagedBean(value = "adem")
 public class TestBean {
 
     // Add business logic below. (Right-click in editor and choose
